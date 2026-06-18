@@ -1,0 +1,76 @@
+[meta]
+    title = Collect SerialBox Savepoints from SHiELD
+    description = """
+        Build shield, collect SerialBox savepoint data
+    """
+
+[scheduling]
+    [[graph]]
+        R1 = """
+            clone => cp-CHECKOUT_SER => checkout-src => build => create-run-script => run-aquaplanet-collection
+        """
+
+[runtime]
+    [[clone]]
+        script = """
+            cd $CYLC_WORKFLOW_SHARE_DIR
+            mkdir -p SHiELD_dev
+            cd SHiELD_dev
+
+            mkdir -p SCRATCH
+
+            echo "Cloning repo..."
+            git clone --recursive https://github.com/NOAA-GFDL/SHiELD_build
+            cd SHiELD_build
+            git checkout 4fae429205383408c25ca89a39895fbf9e236a09
+        """
+
+   [[cp-CHECKOUT_SER]]
+       script = """
+           echo "command: cp $CYLC_WORKFLOW_RUN_DIR/CHECKOUT_SER $CYLC_WORKFLOW_SHARE_DIR/SHiELD_dev/SHiELD_build/"
+           cp $CYLC_WORKFLOW_RUN_DIR/CHECKOUT_SER $CYLC_WORKFLOW_SHARE_DIR/SHiELD_dev/SHiELD_build/
+       """
+
+   [[checkout-src]]
+        script = """
+            cd $CYLC_WORKFLOW_SHARE_DIR/SHiELD_dev/SHiELD_build/
+            ./CHECKOUT_SER
+        """
+
+   [[build]]
+        script = """
+            cd $CYLC_WORKFLOW_SHARE_DIR/SHiELD_dev/SHiELD_build/Build
+            ./COMPILE cleanall shield nh repro 64bit intel serial
+        """
+
+   [[create-run-script]]
+        script = """
+            cd $CYLC_WORKFLOW_SHARE_DIR/SHiELD_dev/SHiELD_build/RTS/GAEA_RTS/serialbox
+
+            # Create C12 script from C48 script
+            cp C48_res.aquaplanet.csh C12_res.aquaplanet.csh
+
+            # TODO: Modify run script and generate output
+            sed -i \
+                -e 's|set BUILD_AREA = ".*"|set BUILD_AREA = "'"$CYLC_WORKFLOW_SHARE_DIR"'/SHiELD_dev/SHiELD_build/"|' \
+                -e 's|C48|C12|' \
+                -e 's|set res = 48|set res = 12|' \
+                -e 's|set GRIDDIR = .*|set GRIDDIR = "/gpfs/f5/gfdl_w/proj-shared/pace_INPUT_DATA/C12/"|' \
+                -e 's|set npx = .*|set npx = “13”|' \
+                -e 's|set npy = .*|set npy = “13”|' \
+                C12_res.aquaplanet.csh
+        """
+
+    [[run-aquaplanet-collection]]
+        sript = """
+            cd $CYLC_WORKFLOW_SHARE_DIR/SHiELD_dev/SHiELD_build/RTS/GAEA_RTS/serialbox
+
+            export COMPILER="intel"
+            export MODE="64bit"
+            export COMP="repro"
+            export ACCOUNT="gfdl_f"
+
+            mkdir -p stdout
+
+            sbatch C48_res.aquaplanet.csh --mail-user=${USER}@noaa.gov --mail-type=fail --account=${ACCOUNT}
+        """

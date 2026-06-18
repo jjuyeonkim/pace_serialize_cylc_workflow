@@ -1,0 +1,132 @@
+#!/bin/sh
+#***********************************************************************
+#*                   GNU Lesser General Public License
+#*
+#* This file is part of the SHiELD Build System.
+#*
+#* The SHiELD Build System free software: you can redistribute it
+#* and/or modify it under the terms of the
+#* GNU Lesser General Public License as published by the
+#* Free Software Foundation, either version 3 of the License, or
+#* (at your option) any later version.
+#*
+#* The SHiELD Build System distributed in the hope that it will be
+#* useful, but WITHOUT ANYWARRANTY; without even the implied warranty
+#* of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#* See the GNU General Public License for more details.
+#*
+#* You should have received a copy of the GNU Lesser General Public
+#* License along with theSHiELD Build System
+#* If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
+#
+#  DISCLAIMER: This script is provided as-is and as such is unsupported.
+#
+
+. ${MODULESHOME}/init/sh
+module load git
+
+export SHiELD_SRC=${PWD%/*}/SHiELD_SRC/
+
+mkdir -p ${SHiELD_SRC}
+cd ${SHiELD_SRC}
+
+config="shield"
+config_name="SHiELD"
+
+#Check input argument
+######################
+for arg in "$@"
+  do
+      case $arg in
+          solo|shield|shiemom|shiemom_lm4)
+             config="${arg#*=}"
+             if [ $config = 'solo' ] ; then
+               config_name="SOLO"
+             fi
+             if [ $config = 'shield' ] ; then
+               config_name="SHiELD"
+             fi
+             if [ $config = 'shiemom' ] ; then
+               config_name="SHiEMOM"
+             fi
+             if [ $config = 'shiemom_lm4' ] ; then
+               config_name="SHiEMOM_LM4"
+             fi
+             shift # Remove "config" from processing
+             ;;
+          *)
+          if [ ${arg#} != '--help' ] && [ ${arg#} != '-h' ] ; then
+            echo "option "${arg#}" not found"
+          fi
+          echo -e ' '
+          echo -e "valid options are:"
+          echo -e "\t[solo]       \t\t\t SOLO FV3 configuration"
+          echo -e "\t[shield]     \t\t\t SHiELD configuration"
+          echo -e "\t[shiemom]    \t\t\t SHiEMOM (SHiELD+MOM6/SIS2) configuration"
+          echo -e "\t[shiemom_lm4]    \t\t\t SHiEMOM_LM4 (SHiELD+MOM6/SIS2+LM4) configuration"
+          echo -e "\n"
+          exit
+          ;;
+      esac
+  done
+
+
+#CHECKOUT code
+################
+echo ' '
+echo 'Checking out files for: '$config_name
+echo ' '
+
+release="main"
+
+fv3_release=$release
+fv3_jjk_release="20260219_serialbox"
+
+phy_release=$release
+phy_oelbert_release="feature/serialization"
+
+fms_release="2025.04"
+
+fms_c_release="2025.04"
+fms_c_jjk_release="20260305_serialbox"
+
+drivers_release=$release
+drivers_jjk_release="20260219_serialbox"
+
+land_release="2025.04"
+
+git clone -b ${fv3_jjk_release} git@github.com:jjuyeonkim/GFDL_atmos_cubed_sphere.git
+
+git clone -b ${fms_release}   https://github.com/NOAA-GFDL/FMS
+
+git clone -b ${drivers_jjk_release} git@github.com:jjuyeonkim/atmos_drivers.git
+
+if [ $config_name = 'SHiELD' ] || [ $config_name = 'SHiEMOM' ] || [ $config_name = 'SHiEMOM_LM4' ] ; then
+   git clone -b ${phy_release} https://github.com/NOAA-GFDL/SHiELD_physics
+   git clone -b ${fms_c_jjk_release} git@github.com:jjuyeonkim/FMSCoupler.git
+   git clone  https://github.com/NOAA-GFDL/ice_param
+fi
+
+if [ $config_name = 'SHiELD' ] ; then
+   git clone  https://github.com/NOAA-GFDL/ocean_null
+   git clone  https://github.com/NOAA-GFDL/land_null
+   git clone  https://github.com/NOAA-GFDL/ice_null
+fi
+
+if [ $config_name = 'SHiEMOM' ] ; then
+   git clone  https://github.com/NOAA-GFDL/land_null
+   cd ../SHiELD_build/
+   ./CHECKOUT_mom6.csh
+fi
+
+if [ $config_name = 'SHiEMOM_LM4' ] ; then
+   git clone --recursive -b ${land_release} http://gitlab.gfdl.noaa.gov/fms/lm4p.git LM4p
+   cd ../SHiELD_build/
+   ./CHECKOUT_mom6.csh
+fi
+
+#Automatic release tracking from Matt M.
+echo $release > release
+
+
