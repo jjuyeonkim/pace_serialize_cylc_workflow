@@ -61,8 +61,8 @@
                 C12_res.aquaplanet.csh
         """
 
-    [[run-aquaplanet-collection]]
-        sript = """
+    [[run-aquaplanet-collection]] # TODO: This step errors out. Need to debug.
+        script = """
             cd $CYLC_WORKFLOW_SHARE_DIR/SHiELD_dev/SHiELD_build/RTS/GAEA_RTS/serialbox
 
             export COMPILER="intel"
@@ -72,5 +72,5 @@
 
             mkdir -p stdout
 
-            sbatch C48_res.aquaplanet.csh --mail-user=${USER}@noaa.gov --mail-type=fail --account=${ACCOUNT}
+            sbatch C12_res.aquaplanet.csh --mail-user=${USER}@noaa.gov --mail-type=fail --account=${ACCOUNT}
         """
