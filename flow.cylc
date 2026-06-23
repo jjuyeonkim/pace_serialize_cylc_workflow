@@ -56,8 +56,8 @@
                 -e 's|C48|C12|' \
                 -e 's|set res = 48|set res = 12|' \
                 -e 's|set GRIDDIR = .*|set GRIDDIR = "/gpfs/f5/gfdl_w/proj-shared/pace_INPUT_DATA/C12/"|' \
-                -e 's|set npx = .*|set npx = “13”|' \
-                -e 's|set npy = .*|set npy = “13”|' \
+                -e 's|set npx = .*|set npx = "13"|' \
+                -e 's|set npy = .*|set npy = "13"|' \
                 C12_res.aquaplanet.csh
         """
 
