@@ -43,5 +43,4 @@ You can grep the log output for the WORKDIR:
 grep WORKDIR ~/cylc-run/pace_serialize_cylc_workflow/run1/share/SHiELD_dev/SHiELD_build/RTS/GAEA_RTS/serialbox/stdout/C12_res_aquaplanet.*
 ```
 
-Serialized Reference Data will be located here: 
-<WORKDIR>/rundir/test_data/
+Serialized Reference Data will be within the WORKDIR, located in rundir/test_data/.
